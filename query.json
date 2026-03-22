@@ -1,0 +1,11 @@
+{
+  "conditions": [
+    {"column": "A", "type": "contains", "value": "关键词", "logic": "OR"},
+    {"column": "B", "type": "eq", "value": "精确值"}
+  ],
+  "logic": "AND",
+  "highlight": {
+    "cell": "#FFFF00",
+    "row": "#FF9900"
+  }
+}
