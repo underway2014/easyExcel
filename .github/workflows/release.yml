@@ -34,12 +34,7 @@ jobs:
           GOOS: ${{ matrix.platform == 'macos-latest' && 'darwin' || 'windows' }}
           GOARCH: amd64
           CGO_ENABLED: 1
-        run: |
-          if [ "$GOOS" = "windows" ]; then
-            go build -ldflags="-s -w" -o easyExcel.exe ./cmd/main.go
-          else
-            go build -ldflags="-s -w" -o easyExcel ./cmd/main.go
-          fi
+        run: go build -ldflags="-s -w" -o ${{ matrix.platform == 'macos-latest' && 'easyExcel' || 'easyExcel.exe' }} ./cmd/main.go
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
