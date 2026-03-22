@@ -1,0 +1,84 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        go-version: ['1.24']
+        platform: [macos-latest, windows-latest]
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Get dependencies
+        run: go mod download
+
+      - name: Build
+        env:
+          GOOS: ${{ matrix.platform == 'macos-latest' && 'darwin' || 'windows' }}
+          GOARCH: amd64
+        run: |
+          if [ "$GOOS" = "windows" ]; then
+            go build -ldflags="-s -w" -o easyExcel.exe ./cmd/main.go
+          else
+            go build -ldflags="-s -w" -o easyExcel ./cmd/main.go
+          fi
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: easyExcel-${{ matrix.platform }}-amd64
+          path: |
+            ${{ matrix.platform == 'macos-latest' && 'easyExcel' || 'easyExcel.exe' }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create checksums
+        run: |
+          cd artifacts
+          for dir in */; do
+            cd "$dir"
+            if [ -f easyExcel ]; then
+              shasum -a 256 easyExcel > easyExcel_SHA256.txt
+            elif [ -f easyExcel.exe ]; then
+              shasum -a 256 easyExcel.exe > easyExcel_exe_SHA256.txt
+            fi
+            cd ..
+          done
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/**/easyExcel
+            artifacts/**/easyExcel.exe
+            artifacts/**/*_SHA256.txt
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
