@@ -29,11 +29,6 @@ jobs:
       - name: Get dependencies
         run: go mod download
 
-      - name: Install OpenGL libraries (macOS)
-        if: matrix.platform == 'macos-latest'
-        run: |
-          brew install mesa glu
-
       - name: Build
         env:
           GOOS: ${{ matrix.platform == 'macos-latest' && 'darwin' || 'windows' }}
